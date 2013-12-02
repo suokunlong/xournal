@@ -851,18 +851,17 @@ void make_canvas_item_one(GooCanvasItem *group, struct Item *item)
         points.coords = item->path->coords+2*j;
 	// do not set color, it will be done by the container
 	xo_create_path(item->canvas_item, &points, item->widths[j]);
-	/*
-	goo_canvas_polyline_new(item->canvas_item, FALSE, 0,
-				"points", &points,
-				"line-cap", CAIRO_LINE_CAP_ROUND, 
-				"line-join", CAIRO_LINE_JOIN_ROUND,
-				//"fill-color-rgba", item->brush.color_rgba,  
-				"stroke-color-rgba", item->brush.color_rgba,  
-				"line-width", item->widths[j],
-				NULL);
-	*/
       }
     }
+    // dmg: XXXX
+    // this is just testing how highlighter will work if it is always below text rather than above
+    // it is really a hack, but I think it will be better than the current model of writing
+    // on top and look nicer. the disadvantage is that it will be below images
+    // but oh well, we can't do everything :)
+    if ((item->brush.color_rgba & 0xFF) != 0xFF) {
+      goo_canvas_item_lower(item->canvas_item, NULL);
+    }
+
     // set color
     // we do it separately because this way the items  inherit from the group
   }

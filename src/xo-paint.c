@@ -300,23 +300,10 @@ void create_new_stroke(GdkEvent *event)
   xo_event_get_pointer_coords(event, ui.cur_path.coords);
   
   if (ui.cur_brush->ruler) {
-#ifdef ABC
-    ui.cur_item->canvas_item = gnome_canvas_item_new(ui.cur_layer->group,
-						     gnome_canvas_line_get_type(),
-						     "cap-style", GDK_CAP_ROUND, 
-						     "join-style", GDK_JOIN_ROUND,
-						     "fill-color-rgba", ui.cur_item->brush.color_rgba,
-						     "width-units", ui.cur_item->brush.thickness, NULL);
-#else
     ui.cur_item->brush.variable_width = FALSE;
     ui.cur_item->canvas_item = xo_create_path_with_color(ui.cur_layer->group, &ui.cur_path, ui.cur_item->brush.thickness, ui.cur_item->brush.color_rgba);
-#endif
   } else {
-#ifdef ABC
-    ui.cur_item->canvas_item = gnome_canvas_item_new(ui.cur_layer->group, gnome_canvas_group_get_type(), NULL);
-#else
     ui.cur_item->canvas_item =  xo_create_group(ui.cur_layer->group);
-#endif
   }
 }
 
@@ -403,11 +390,14 @@ void continue_stroke(GdkEvent *event)
       goo_canvas_convert_to_pixels(canvas, &c[2], &c[3]);
       cairo_set_line_width(cr, current_width * ui.zoom);
       cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+
+      // XXX even if we write with an alpha channel, it looks opaque :(
+
       cairo_set_source_rgba(cr, 
 			    ((ui.cur_item->brush.color_rgba & 0xFF000000) >> 24) / 255.0,
 			    ((ui.cur_item->brush.color_rgba & 0x00FF0000) >> 16) /255.0,
 			    ((ui.cur_item->brush.color_rgba & 0x0000FF00) >> 8) / 255.0,
-			    (ui.cur_item->brush.color_rgba & 0x000000FF)/ 255.0);
+			    (ui.cur_item->brush.color_rgba & 0xFF)/ 255.0);
 			   
       cairo_move_to(cr, c[0] , c[1]);
       cairo_line_to(cr, c[2] , c[3]);
