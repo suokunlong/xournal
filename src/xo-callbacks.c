@@ -2216,20 +2216,19 @@ on_toolsTextFont_activate              (GtkMenuItem     *menuitem,
   gchar *str;
   
   dialog =gtk_font_chooser_dialog_new(_("Select Font"), NULL);
+  if (dialog == NULL)
+    return;
   /*
   dialog = gtk_font_selection_dialog_new(_("Select Font"));
   */
   str = make_cur_font_name();
   gtk_font_chooser_set_font(GTK_FONT_CHOOSER(dialog), str);
   g_free(str);
-  if (gtk_dialog_run(GTK_DIALOG(dialog)) != GTK_RESPONSE_OK) {
-    gtk_widget_destroy(dialog);
-    return;
+  if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK) {
+    str = gtk_font_chooser_get_font(GTK_FONT_CHOOSER(dialog));
+    process_font_sel(str);
   }
-  str = gtk_font_chooser_get_font(GTK_FONT_CHOOSER(dialog));
   gtk_widget_destroy(dialog);
-  process_font_sel(str);
-
 }    
 
 void
@@ -3885,16 +3884,9 @@ on_buttonColorChooser_set              (GtkColorChooser  *colorbutton,
                                         gpointer         user_data)
 {
   GdkRGBA gdkcolor;
-  //  GdkColor gdkcolor;
-  //  guint16 alpha;
-  TRACE_1("ente-------------------------------------------------------------r");
-  gtk_color_chooser_get_rgba(colorbutton, &gdkcolor);
-  //gtk_color_button_get_rgba(colorbutton, &gdkcolor);
-  //  alpha = gtk_color_button_get_alpha(colorbutton);
-  
 
+  gtk_color_chooser_get_rgba(colorbutton, &gdkcolor);
   process_color_activate((GtkMenuItem*)colorbutton, COLOR_OTHER, xo_GdkRGBA_to_rgba(&gdkcolor));
-  TRACE_1("exie-------------------------------------------------------------t");
 }
 
 
