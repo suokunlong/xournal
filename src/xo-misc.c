@@ -190,7 +190,7 @@ struct Page *new_page(struct Page *template)
   update_canvas_bg(pg);
 
   l->group = goo_canvas_group_new ((GooCanvasItem*)pg->group, NULL);
-
+  printf("Finished new page\n");
   return pg;
 }
 
@@ -825,6 +825,7 @@ void make_page_clipbox(struct Page *pg)
 		      NULL);
   */
   goo_canvas_set_bounds(canvas, 0, 0, pg->width, pg->height);
+  printf("after setting bounds\n");
 #endif
 
 }

@@ -3146,6 +3146,12 @@ on_vscroll_changed                     (GtkAdjustment   *adjustment,
   need_update = FALSE;
   viewport_top = gtk_adjustment_get_value(adjustment) / ui.zoom;
   viewport_bottom = (gtk_adjustment_get_value(adjustment) + gtk_adjustment_get_page_size(adjustment)) / ui.zoom;
+  // this seems to happen if we are too quick at creating a new file, and there is some processing to be done...
+  // at least I think so.
+  if (ui.cur_page == NULL) {
+    fprintf(stderr, "avoiding a segfault in on_vscroll_changed\n");
+    return;
+  }
   tmppage = ui.cur_page;
   while (viewport_top > tmppage->voffset + tmppage->height) {
     if (ui.pageno == journal.npages-1) 

@@ -335,15 +335,12 @@ void clipboard_paste_from_xournal(GtkSelectionData *sel_data)
 // paste external text
 void clipboard_paste_text(gchar *text)
 {
-#ifdef ABC
-
-
 
   struct Item *item;
   double pt[2];
 
   reset_selection();
-  get_current_pointer_coords(pt);
+  xo_pointer_get_current_coords(pt);
   set_current_page(pt);  
 
   ui.selection = g_new(struct Selection, 1);
@@ -369,17 +366,14 @@ void clipboard_paste_text(gchar *text)
   if (item->bbox.left < 0) item->bbox.left = 0;
   if (item->bbox.bottom > ui.cur_page->height) item->bbox.top += ui.cur_page->height-item->bbox.bottom;
   if (item->bbox.top < 0) item->bbox.top = 0;
-  gnome_canvas_item_set(item->canvas_item, "x", item->bbox.left, "y", item->bbox.top, NULL);
+
+  xo_goo_canvas_item_move_to(item->canvas_item, item->bbox.left, item->bbox.top);
+
   update_item_bbox(item);
   
   ui.selection->bbox = item->bbox;
-  ui.selection->canvas_item = gnome_canvas_item_new(ui.cur_layer->group,
-      gnome_canvas_rect_get_type(), "width-pixels", 1,
-      "outline-color-rgba", 0x000000ff,
-      "fill-color-rgba", 0x80808040,
-      "x1", ui.selection->bbox.left, "x2", ui.selection->bbox.right, 
-      "y1", ui.selection->bbox.top, "y2", ui.selection->bbox.bottom, NULL);
-  make_dashed(ui.selection->canvas_item);
+
+  xo_selection_rectangle_draw(TRUE);
 
   prepare_new_undo();
   undo->type = ITEM_PASTE;
@@ -392,9 +386,7 @@ void clipboard_paste_text(gchar *text)
   update_color_buttons();
   update_font_button();  
   update_cursor(); // FIXME: can't know if pointer is within selection!
-#else
-  assert(0);
-#endif
+
 
 }
 
