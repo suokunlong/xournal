@@ -11,7 +11,9 @@ branch
 
 * Currently integrated branches not in upstream
 
-- jp-translations: translations to japanese
 - touchscreen-as-hand-tool: Use the touchscreen as a handtool exclusively
 - horizontal-scroll-lock: do not allow hand tool to scroll horizontally
+- fixes an inconsistency of g_path_get_basename when trying to open
+  the PDF in the background: in windows it is capable of dealing with linux
+  paths, but not in linux. Now it is symmetric.
 
