@@ -254,6 +254,26 @@ void xo_goo_canvas_item_move_to_pixel_boundary(GooCanvasItem *item)
 }
 
 
+void xo_goo_canvas_set_bounds(GooCanvas *canvas,
+			      gdouble left,
+			      gdouble top,
+			      gdouble right,
+			      gdouble bottom)
+{
+  // Goo canvas will try to do it no matter what! so we check first if we need to
+  gdouble oldLeft;
+  gdouble oldTop;
+  gdouble oldRight;
+  gdouble oldBottom;
+  assert(canvas != NULL);
+  goo_canvas_get_bounds(canvas, &oldLeft, &oldTop, &oldRight, &oldBottom);
+  if (fabs(left - oldLeft) > 1e-10 || 
+      fabs(top - oldTop) > 1e-10 ||
+      fabs(right - oldRight) > 1e-10 ||
+      fabs(bottom - oldBottom) > 1e-10) {
+    goo_canvas_set_bounds(canvas, left, top, right, bottom);
+  }
+}
 
 GdkPixbuf  *xo_goo_canvas_item_pixbuf_get(GooCanvasItem *item)
 {
@@ -824,7 +844,7 @@ void make_page_clipbox(struct Page *pg)
 		      "stroke-color", "red", 
 		      NULL);
   */
-  goo_canvas_set_bounds(canvas, 0, 0, pg->width, pg->height);
+  xo_goo_canvas_set_bounds(canvas, 0, 0, pg->width, pg->height);
   printf("after setting bounds\n");
 #endif
 
@@ -1064,7 +1084,7 @@ gboolean is_visible(struct Page *pg)
 
 }
 
-void rescale_bg_pixmaps(void)
+void xo_rescale_bg_pixmaps(void)
 {
   GList *pglist;
   struct Page *pg;
@@ -1074,6 +1094,7 @@ void rescale_bg_pixmaps(void)
   gdouble zoom_to_request;
   int i=0;
 
+  TRACE_1("    -----------Entering\n");
   for (pglist = journal.pages; pglist!=NULL; pglist = pglist->next) {
     i++;
     pg = (struct Page *)pglist->data;
@@ -1714,6 +1735,12 @@ void do_switch_page(int pg, gboolean rescroll, gboolean refresh_all)
   ui.cur_page = g_list_nth_data(journal.pages, ui.pageno);
   ui.layerno = ui.cur_page->nlayers-1;
   ui.cur_layer = (struct Layer *)(g_list_last(ui.cur_page->layers)->data);
+
+  if (ui.view_continuous && refresh_all) {
+    printf("redisplaying the journal\n");
+    xo_journal_display();
+  }
+
   update_page_stuff();
 
   if (ui.progressive_bg) {
@@ -1725,17 +1752,9 @@ void do_switch_page(int pg, gboolean rescroll, gboolean refresh_all)
     gtk_adjustment_set_value(gtk_layout_get_vadjustment(GTK_LAYOUT(canvas)),
       ui.cur_page->voffset*ui.zoom);  */
 
-#ifdef ABC    
-    gnome_canvas_get_scroll_offsets(canvas, &cx, &cy);
-    cy = ui.cur_page->voffset*ui.zoom;
-    gnome_canvas_scroll_to(canvas, cx, cy);
-#else
-    //    xo_canvas_scroll_to_y_pixels(ui.cur_page->voffset*ui.zoom);
     xo_canvas_scroll_to_y_pixels(ui.cur_page->voffset);
-#endif
     
     if (refresh_all)  {
-      //gnome_canvas_set_pixels_per_unit(canvas, ui.zoom);
       xo_canvas_set_pixels_per_unit();
     } else if (!ui.view_continuous) {
       //      gnome_canvas_item_move(GNOME_CANVAS_ITEM(ui.cur_page->group), 0., 0.);
@@ -1746,59 +1765,79 @@ void do_switch_page(int pg, gboolean rescroll, gboolean refresh_all)
 }
 
 
+void xo_canvas_display_all_pages(void)
+{
+  double vertpos, maxwidth;
+  int i;
+  GList *pglist;
+  struct Page *pg;
+
+  vertpos = 0.; 
+  maxwidth = 0.;
+  for (i=0, pglist = journal.pages; pglist!=NULL; i++, pglist = pglist->next) {
+    pg = (struct Page *)pglist->data;
+    if (pg->group!=NULL) {
+      pg->hoffset = 0.; 
+      pg->voffset = vertpos;
+      
+      xo_goo_canvas_item_move_to(pg->group, pg->hoffset, pg->voffset);
+      xo_goo_canvas_item_move_to_pixel_boundary(pg->group);
+      xo_goo_canvas_item_show(pg->group);
+      
+    }
+    
+    vertpos += pg->height + VIEW_CONTINUOUS_SKIP;
+    
+    if (pg->width > maxwidth) 
+      maxwidth = pg->width;
+  }
+  vertpos -= VIEW_CONTINUOUS_SKIP;
+  xo_goo_canvas_set_bounds(canvas, 0, 0, maxwidth, vertpos);
+}
+
+void xo_canvas_display_page(void)
+{
+  GList *pglist;
+  struct Page *pg;
+
+  for (pglist = journal.pages; pglist!=NULL; pglist = pglist->next) {
+    pg = (struct Page *)pglist->data;
+    if (pg == ui.cur_page && pg->group!=NULL) {
+      pg->hoffset = 0.; 
+      pg->voffset = 0.;
+      xo_goo_canvas_item_move_to(pg->group, pg->hoffset, pg->voffset);
+      xo_goo_canvas_item_show(pg->group);
+    } else {
+      if (pg->group!=NULL) 
+	xo_goo_canvas_item_hide(pg->group);
+    }
+  }
+  xo_goo_canvas_set_bounds(canvas, 0, 0, ui.cur_page->width, ui.cur_page->height);
+}
+
+void xo_journal_display(void)
+{
+  if (ui.view_continuous) {
+    xo_canvas_display_all_pages();
+  }
+  // this one takes care of displaying the proper page
+  update_page_stuff();
+}
+
 
 void update_page_stuff(void)
 {
   gchar tmp[10];
   GtkComboBoxText *layerbox;
-  int i;
-  GList *pglist;
   GtkSpinButton *spin;
-  struct Page *pg;
-  double vertpos, maxwidth;
   
-  // move the page groups to their rightful locations or hide them
-  if (ui.view_continuous) {
 
-    vertpos = 0.; 
-    maxwidth = 0.;
-    for (i=0, pglist = journal.pages; pglist!=NULL; i++, pglist = pglist->next) {
-      pg = (struct Page *)pglist->data;
-      if (pg->group!=NULL) {
-        pg->hoffset = 0.; 
-	pg->voffset = vertpos;
-
-	xo_goo_canvas_item_move_to(pg->group, pg->hoffset, pg->voffset);
-	xo_goo_canvas_item_move_to_pixel_boundary(pg->group);
-
-//        gnome_canvas_item_set(GNOME_CANVAS_ITEM(pg->group), 
-//            "x", pg->hoffset, "y", pg->voffset, NULL);
-        xo_goo_canvas_item_show(pg->group);
-
-      }
-
-      vertpos += pg->height + VIEW_CONTINUOUS_SKIP;
-
-      if (pg->width > maxwidth) 
-	maxwidth = pg->width;
-    }
-    vertpos -= VIEW_CONTINUOUS_SKIP;
-    goo_canvas_set_bounds(canvas, 0, 0, maxwidth, vertpos);
-
+  if (!ui.view_continuous) {
+    // in continuous mode the canvas already has all the pages
+    // but in non-continous we have to display the rightful one
+    xo_canvas_display_page();
   } else {
-    for (pglist = journal.pages; pglist!=NULL; pglist = pglist->next) {
-      pg = (struct Page *)pglist->data;
-      if (pg == ui.cur_page && pg->group!=NULL) {
-        pg->hoffset = 0.; 
-	pg->voffset = 0.;
-	xo_goo_canvas_item_move_to(pg->group, pg->hoffset, pg->voffset);
-        xo_goo_canvas_item_show(pg->group);
-      } else {
-        if (pg->group!=NULL) 
-	  xo_goo_canvas_item_hide(pg->group);
-      }
-    }
-    goo_canvas_set_bounds(canvas, 0, 0, ui.cur_page->width, ui.cur_page->height);
+    xo_canvas_display_all_pages();
   }
 
   // update the page / layer info at bottom of screen

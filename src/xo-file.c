@@ -917,7 +917,7 @@ gboolean open_journal(char *filename)
     new_journal();
     ui.zoom = ui.startup_zoom;
     xo_canvas_set_pixels_per_unit();
-    update_page_stuff();
+    xo_journal_display();
     return init_bgpdf(filename, TRUE, DOMAIN_ABSOLUTE);
   }
   
@@ -983,7 +983,7 @@ gboolean open_journal(char *filename)
   xo_canvas_set_pixels_per_unit();
 #endif
   make_canvas_items();
-  update_page_stuff();
+  xo_journal_display();
   rescale_bg_pixmaps(); // this requests the PDF pages if need be
 #ifdef ABC
   gtk_adjustment_set_value(gtk_layout_get_vadjustment(GTK_LAYOUT(canvas)), 0);
@@ -1412,7 +1412,7 @@ gboolean init_bgpdf(char *pdfname, gboolean create_pages, int file_domain)
   }
   printf(">>>>>>>>>>>>>>>>> pages created with bg 2\n");
 
-  update_page_stuff();
+  xo_journal_display();
   rescale_bg_pixmaps(); // this actually requests the pages !!
   return TRUE;
 }

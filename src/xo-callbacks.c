@@ -62,7 +62,7 @@ on_fileNew_activate                    (GtkMenuItem     *menuitem,
     new_journal();
     TRACE_2(">+++++++++++++++++++++++++ Startup %f\n", ui.startup_zoom);
     ui.zoom = ui.startup_zoom;
-    update_page_stuff();
+    xo_journal_display();
 
     gtk_adjustment_set_value(gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(canvas)), 0);
     xo_canvas_set_pixels_per_unit();
@@ -128,7 +128,7 @@ on_fileNewBackground_activate          (GtkMenuItem     *menuitem,
   ui.zoom = ui.startup_zoom;
   xo_canvas_set_pixels_per_unit();
 
-  update_page_stuff();
+  xo_journal_display();
   success = init_bgpdf(filename, TRUE, file_domain);
   set_cursor_busy(FALSE);
   if (success) {
@@ -185,7 +185,10 @@ on_fileOpen_activate                   (GtkMenuItem     *menuitem,
   set_cursor_busy(TRUE);
   success = open_journal(filename);
   set_cursor_busy(FALSE);
-  if (success) { g_free(filename); return; }
+  if (success) { 
+    g_free(filename); 
+    return; 
+  }
   
   /* open failed */
   dialog = gtk_message_dialog_new(GTK_WINDOW (winMain), GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -1016,12 +1019,14 @@ on_viewContinuous_activate             (GtkMenuItem     *menuitem,
   v_adj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(canvas));
   yscroll = gtk_adjustment_get_value(v_adj) - pg->voffset*ui.zoom;
 
-  update_page_stuff();
+  xo_journal_display();
 
   gtk_adjustment_set_value(v_adj, yscroll + pg->voffset*ui.zoom);
 
   // force a refresh
   xo_canvas_set_pixels_per_unit();
+
+  xo_canvas_display_all_pages();
 }
 
 
@@ -1041,6 +1046,8 @@ on_viewOnePage_activate                (GtkMenuItem     *menuitem,
   gtk_adjustment_set_value(v_adj, yscroll + ui.cur_page->voffset*ui.zoom);
   // force a refresh
   xo_canvas_set_pixels_per_unit();
+
+  //  xo_canvas_place_pages();
 
 }
 
@@ -1175,6 +1182,7 @@ on_journalNewPageBefore_activate       (GtkMenuItem     *menuitem,
   pg = new_page(ui.cur_page);
   journal.pages = g_list_insert(journal.pages, pg, ui.pageno);
   journal.npages++;
+  printf("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ Page %d: of %d\n", ui.pageno, journal.npages);
   do_switch_page(ui.pageno, TRUE, TRUE);
   
   prepare_new_undo();
@@ -1195,6 +1203,7 @@ on_journalNewPageAfter_activate        (GtkMenuItem     *menuitem,
   pg = new_page(ui.cur_page);
   journal.pages = g_list_insert(journal.pages, pg, ui.pageno+1);
   journal.npages++;
+  printf("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ Page %d: of %d\n", ui.pageno, journal.npages);
   do_switch_page(ui.pageno+1, TRUE, TRUE);
 
   prepare_new_undo();
@@ -1735,8 +1744,12 @@ on_journalApplyAllPages_activate       (GtkMenuItem     *menuitem,
   
   end_text();
   active = gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM (menuitem));
-  if (active == ui.bg_apply_all_pages) return;
+
+  if (active == ui.bg_apply_all_pages) 
+    return;
+
   ui.bg_apply_all_pages = active;
+
   update_page_stuff();
   
 /* THIS IS THE OLD VERSION OF THE FEATURE -- APPLIED CURRENT BG TO ALL
@@ -2847,8 +2860,11 @@ on_canvas_draw_event                 (GtkWidget       *widget,
 				      void             *cr,
                                       gpointer         user_data)
 {
+  /*
+    XXXX
   if (ui.view_continuous && ui.progressive_bg) 
     rescale_bg_pixmaps();
+  */
   return FALSE;
 }
 
@@ -3136,12 +3152,15 @@ on_vscroll_changed                     (GtkAdjustment   *adjustment,
   double viewport_top, viewport_bottom;
   struct Page *tmppage;
   
+  TRACE_1("Entering\n");
   if (!ui.view_continuous) 
     return;
   
   if (ui.progressive_bg)  {
-    TRACE("Going to rescale background\n");
+    /*
+      // We were going to rescale background, but that is handled somewhere else
     rescale_bg_pixmaps();
+    */
   }
   need_update = FALSE;
   viewport_top = gtk_adjustment_get_value(adjustment) / ui.zoom;

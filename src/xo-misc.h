@@ -48,7 +48,14 @@ void make_canvas_items(void);
 void make_canvas_item_one(GooCanvasItem *group, struct Item *item);
 void update_canvas_bg(struct Page *pg);
 gboolean is_visible(struct Page *pg);
+
+
+#ifdef asdfsadf
 void rescale_bg_pixmaps(void);
+#else
+void xo_rescale_bg_pixmaps(void);
+#define  rescale_bg_pixmaps    (TRACE_1("calling rescale bg pixmaps"), xo_rescale_bg_pixmaps)
+#endif
 
 gboolean have_intersect(struct BBox *a, struct BBox *b);
 void lower_canvas_item_to(GooCanvasItem *g, GooCanvasItem *item, GooCanvasItem *after);
@@ -182,6 +189,9 @@ void xo_pointer_get_current_coords(double *ret);
 void xo_canvas_item_resize(GooCanvasItem  *item, gdouble newWidth, gdouble newHeight, gboolean scaleToFit);
 
 gboolean xo_dialog_select_color(gchar *title, guint32 *rgbaColor, gboolean ignoreAlpha);
+
+void xo_canvas_display_all_pages(void);
+void xo_journal_display(void);
 
 
 #endif

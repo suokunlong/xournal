@@ -434,10 +434,10 @@ extern double DEFAULT_ZOOM;
 #define WARN_1(a) (fprintf(stderr, ">>>>>>>>Warning, warning Mr Robinson --- [%s]:[%s]:[%d]---[%s]\n", __FILE__, __func__, __LINE__, a), assert(0))
 #endif
 
-#define TRACE fprintf(stderr, "> IN [%s]:[%s]:[%d]\n", __FILE__, __func__, __LINE__);
-#define TRACE_1(a) fprintf(stderr, "> IN [%s]:[%s]:[%d]--- [%s]\n", __FILE__, __func__, __LINE__,a);
-#define TRACE_2(a,b) fprintf(stderr, "> IN [%s]:[%s]:[%d]---" a, __FILE__, __func__, __LINE__,b);
-#define TRACE_3(a,b,c) fprintf(stderr, "> IN [%s]:[%s]:[%d]---" a, __FILE__, __func__, __LINE__,b,c);
-#define TRACE_4(a,b,c,d) fprintf(stderr, "> IN [%s]:[%s]:[%d]---" a, __FILE__, __func__, __LINE__,b,c,d);
+#define TRACE fprintf(stderr, "> IN [%s]:[%s]:[%d]\n", __FILE__, __func__, __LINE__)
+#define TRACE_1(a) fprintf(stderr, "> IN [%s]:[%s]:[%d]--- [%s]\n", __FILE__, __func__, __LINE__,a)
+#define TRACE_2(a,b) fprintf(stderr, "> IN [%s]:[%s]:[%d]---" a, __FILE__, __func__, __LINE__,b)
+#define TRACE_3(a,b,c) fprintf(stderr, "> IN [%s]:[%s]:[%d]---" a, __FILE__, __func__, __LINE__,b,c)
+#define TRACE_4(a,b,c,d) fprintf(stderr, "> IN [%s]:[%s]:[%d]---" a, __FILE__, __func__, __LINE__,b,c,d)
 
 #endif
