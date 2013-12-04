@@ -41,6 +41,17 @@ struct UndoItem *undo, *redo; // the undo and redo stacks
 
 double DEFAULT_ZOOM;
 
+void xo_warn_user(gchar *message)
+{
+  GtkWidget *dialog;
+
+  dialog = gtk_message_dialog_new(GTK_WINDOW(winMain), GTK_DIALOG_MODAL,
+				  GTK_MESSAGE_WARNING, GTK_BUTTONS_OK, 
+				  message, NULL);
+  gtk_dialog_run(GTK_DIALOG(dialog));
+  gtk_widget_destroy(dialog);
+}
+
 void init_stuff (int argc, char *argv[])
 {
   GtkWidget *w;
@@ -324,6 +335,7 @@ main (int argc, char *argv[])
   textdomain (GETTEXT_PACKAGE);
 #endif
   
+
   gtk_set_locale ();
   gtk_init (&argc, &argv);
 
@@ -345,8 +357,11 @@ main (int argc, char *argv[])
    */
   winMain = create_winMain ();
   
+
   init_stuff (argc, argv);
   gtk_window_set_icon(GTK_WINDOW(winMain), create_pixbuf("xournal.png"));
+
+  xo_warn_user(_("This is not an official build of xournal.\n\n You should not use it unless you understand what you are doing. You have been warned.\n\n--dmg"));
   
   gtk_main ();
   
