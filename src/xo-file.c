@@ -825,6 +825,82 @@ gboolean user_wants_second_chance(char **filename)
   return TRUE;    
 }
 
+gchar* xo_path_get_basename(gchar *file_name)
+{
+  // in windows, if a path has a '/' or '\' it is properly handled. But in linux
+  // it ignores / as part of the path!!!! so fix that
+
+#ifdef WIN32
+  // if it is windows, call the glib function
+  return g_path_get_basename(file_name);
+#else
+
+
+  // steal the code from gutils.c and fix it
+
+  register gssize base;
+  register gssize last_nonslash;
+  gsize len;
+  gchar *retval;
+  gchar *temp;
+
+  g_return_val_if_fail (file_name != NULL, NULL);
+
+  temp = g_path_get_basename(file_name);
+  if (strlen(temp) < strlen(file_name)) {
+    // we found something, simply return, that way we don't break anything we should not
+    return temp;
+  } else {
+    g_free(temp);
+
+    if (file_name[0] == '\0')
+      /* empty string */
+      return g_strdup (".");
+
+    last_nonslash = strlen (file_name) - 1;
+
+#ifndef WIN32
+#define XO_IS_DIR_SEPARATOR(c) ((c) == G_DIR_SEPARATOR || (c) == '\\')
+#else
+#define XO_IS_DIR_SEPARATOR(c) G_IS_DIR_SEPARATOR(c)
+#endif
+
+
+    while (last_nonslash >= 0 && XO_IS_DIR_SEPARATOR (file_name [last_nonslash]))
+      last_nonslash--;
+
+
+    if (last_nonslash == -1)
+      /* string only containing slashes */
+    return g_strdup (G_DIR_SEPARATOR_S);
+
+    if (last_nonslash == 1 && g_ascii_isalpha (file_name[0]) && file_name[1] == ':')
+      /* string only containing slashes and a drive */
+      return g_strdup (G_DIR_SEPARATOR_S);
+
+    base = last_nonslash;
+
+    while (base >=0 && !XO_IS_DIR_SEPARATOR (file_name [base]))
+      base--;
+
+    if (base == -1 && g_ascii_isalpha (file_name[0]) && file_name[1] == ':')
+      base = 1;
+
+    len = last_nonslash - base;
+    retval = g_malloc (len + 1);
+    memcpy (retval, file_name + base + 1, len);
+    retval [len] = '\0';
+    return retval;
+
+#undef XO_IS_DIR_SEPARATOR
+
+  }
+#endif
+
+}
+
+
+
 gboolean open_journal(char *filename)
 {
   const GMarkupParser parser = { xoj_parser_start_element, 
@@ -913,7 +989,8 @@ gboolean open_journal(char *filename)
     // if file name is invalid: first try in xoj file's directory
     if (!valid && tmpBg_pdf->file_domain != DOMAIN_ATTACH) {
       p = g_path_get_dirname(filename);
-      q = g_path_get_basename(tmpfn);
+      q = xo_path_get_basename(tmpfn);
+
       tmpfn2 = g_strdup_printf("%s/%s", p, q);
       g_free(p); g_free(q);
       valid = init_bgpdf(tmpfn2, FALSE, tmpBg_pdf->file_domain);
