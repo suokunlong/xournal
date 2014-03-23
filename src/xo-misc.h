@@ -144,3 +144,8 @@ wrapper_poppler_page_render_to_pixbuf (PopplerPage *page,
 #define RULING_SPACING 24.0
 #define RULING_BOTTOMMARGIN RULING_SPACING
 #define RULING_GRAPHSPACING 14.17
+
+void 
+xo_display_error(gchar *message);
+void
+xo_layer_active_set(gint value);
