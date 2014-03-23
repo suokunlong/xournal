@@ -1505,7 +1505,8 @@ void init_config_default(void)
   ui.button_switch_mapping = FALSE;
   ui.autoload_pdf_xoj = FALSE;
   ui.poppler_force_cairo = FALSE;
-  
+  ui.snap_to_grid = FALSE;
+  ui.grid_separation = 2.835;   // 1mm in points 2.834645669291339
   // the default UI vertical order
   ui.vertical_order[0][0] = 1; 
   ui.vertical_order[0][1] = 2; 
@@ -1834,6 +1835,15 @@ void save_config_to_file(void)
     _(" default font size"),
     g_strdup_printf("%.1f", ui.default_font_size));
 
+  /*
+  update_keyval("tools", "snap_to_grid",
+    _(" snap to grid (true/false)"),
+    g_strdup(ui.snap_to_grid?"true":"false"));
+  */
+  update_keyval("tools", "grid_separation",
+    _(" distance between grid lines if Snap To Grid is selected"),
+    g_strdup_printf("%.4f", ui.grid_separation));
+
   buf = g_key_file_to_data(ui.config_data, NULL, NULL);
   if (buf == NULL) return;
   f = fopen(ui.configfile, "w");
@@ -2123,5 +2133,11 @@ void load_config_from_file(void)
   if (parse_keyval_string("tools", "default_font", &str))
     if (str!=NULL) { g_free(ui.default_font_name); ui.default_font_name = str; }
   parse_keyval_float("tools", "default_font_size", &ui.default_font_size, 1., 200.);
+  /*
+  parse_keyval_boolean("tools", "snap_to_grid", &ui.snap_to_grid);
+  */
+  parse_keyval_float("tools", "grid_separation", &ui.grid_separation, 1., 200.);
+
+
 #endif
 }
